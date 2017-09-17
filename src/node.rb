@@ -3,6 +3,7 @@ require 'eventmachine'
 require 'bitcoin'
 
 require_relative 'peer_address_store'
+require_relative 'handlers/peer_connection_handler'
 
 module RuLite
   class Node
@@ -12,9 +13,11 @@ module RuLite
     attr_reader :peer_address_store
     attr_reader :last_block_time
 
-    def initialize config, log
+    def initialize config
       @config = config
-      @log = log
+      @log = Log4r::Logger['rulite']
+      
+      @peer_connections = []
       
       Bitcoin.network = @config[:network]
 
@@ -35,8 +38,8 @@ module RuLite
         return
       end
 
-      EM.set_descriptor_table_size(@config[:epoll_limit]).to_s if @config[:epoll_limit]
-      EM.set_effective_user(@config[:epoll_user]) if @config[:epoll_user].present?
+      EM.set_descriptor_table_size(@config[:epoll_limit].to_s) unless @config[:epoll_limit].blank?
+      EM.set_effective_user(@config[:epoll_user]) unless @config[:epoll_user].blank?
       EM.epoll = true
 
       listen_address, listen_port = *config[:listen]
@@ -50,17 +53,20 @@ module RuLite
 
         handler_params = {
           context: self,
-          host: listen_host,
+          host: listen_address,
           port: listen_port.to_i,
           direction: :incoming
         }
         EM.start_server(listen_address, listen_port, PeerConnectionHandler, handler_params)
         log.info "Listening on #{listen_address}:#{listen_port}"
-      
+     
         connect_dns_seeds unless Bitcoin.network[:dns_seeds].empty?
         connect_config_peers unless config[:connect_peers].empty?
-        connect_peers unless peer_addresses.empty?
+        connect_peers unless peer_address_store.empty?
       end
+    rescue StandardError => e
+      log.error "Failed to start"
+      log.error e.message
     end
 
     def stop!
@@ -71,8 +77,15 @@ module RuLite
     def connect_dns_seeds
       seed = Bitcoin.network[:dns_seeds].sample
       log.info "Connecting to DNS seed #{seed}"
-      resolve_dns(seed).each do |host|
-        connect_peer(host, Bitcoin.network[:default_port])
+      resolve_dns(seed) do |addr|
+        connect_peer(addr, Bitcoin.network[:default_port])
+      end
+    end
+
+    def resolve_dns seed, &block
+      dns = EM::DNS::Resolver.resolve(seed)
+      dns.callback do |addrs|
+        addrs.each { |addr| yield addr }
       end
     end
 
@@ -125,6 +138,5 @@ module RuLite
     def uptime
       (Time.now - @start_time).to_i
     end
-
   end
 end

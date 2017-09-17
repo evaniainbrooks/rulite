@@ -5,7 +5,8 @@ module RuLite
   class PeerAddressStore
     def initialize store_path
       @store_path = store_path
-      @peer_addresses = [] 
+      @peer_addresses = []
+      @log = Log4r::Logger['rulite']
 
       self.load!
     end
@@ -23,12 +24,12 @@ module RuLite
     end
 
     def load!
-      if !File.exist?(store_path)
-        FileUtils.mkdir_p(File.dirname(store_path))
+      if !File.exist?(@store_path)
+        FileUtils.mkdir_p(File.dirname(@store_path))
         return []
       end
 
-      yaml_addresses = YAML.load_file(store_path) 
+      yaml_addresses = YAML.load_file(@store_path) 
       yaml_addresses.collect do |addr|
         Bitcoin::Protocol::Addr.new.tap do |o|
           o.time = addr[:time]
@@ -38,17 +39,17 @@ module RuLite
         end
       end
     rescue StandardError => e
-      log.error "Failed to load peer_addresses file"
-      log.error e.message
+      @log.error "Failed to load peer_addresses file"
+      @log.error e.message
       return []
     end
 
     def save! 
-      return if peer_addresses.empty?
+      return if @peer_addresses.empty?
 
-      FileUtils.mkdir_p(File.dirname(store_path))
+      FileUtils.mkdir_p(File.dirname(@store_path))
 
-      peers_as_hash = peer_addresses.map do |peer|
+      peers_as_hash = @peer_addresses.map do |peer|
         Hash[[:time, :service, :ip, :port].zip(peer.entries)] rescue nil
       end.compact
 
@@ -56,10 +57,10 @@ module RuLite
         f.write peers_as_hash
         f.close
       end
-      log.info "Stored peer addresses to #{store_path}"
+      log.info "Stored peer addresses to #{@store_path}"
     rescue StandardError => e
-      log.error "Failed to store peer addresses to #{store_path}"
-      log.error e.message
+      @log.error "Failed to store peer addresses to #{@store_path}"
+      @log.error e.message
     end
   end
 end
