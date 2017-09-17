@@ -7,7 +7,7 @@ Webapp front-end
 ### Run
 
 ```sh
-bundle exec rackup
+ENV=development bundle exec rackup
 ```
 
 Tests
@@ -15,5 +15,5 @@ Tests
 ### Run
 
 ```sh
-bundle exec rspec
+ENV=test bundle exec rspec
 ```
