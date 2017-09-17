@@ -6,7 +6,7 @@ require_relative 'node'
 
 module RuLite
   class Application
-		def initialize
+    def initialize
       Log4r::Logger.root.level = Log4r::DEBUG
 
       @config = YAML.load_file("config/environments/#{ENV['ENV']}.yml").deep_symbolize_keys
