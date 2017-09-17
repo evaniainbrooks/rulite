@@ -25,7 +25,7 @@ module RuLite
       @log = Log4r::Logger['rulite']
 
       @protocol_parser = Bitcoin::Protocol::Parser.new(self)
-			@lock = Monitor.new
+      @lock = Monitor.new
       @start_time = Time.now
     end
 
@@ -33,10 +33,10 @@ module RuLite
       @log.debug "Receiving data (#{data.size} bytes)"
       @lock.synchronize { @parser.parse(data) }
     rescue StandardError => e
-    	@log.error "Error receiving data"
-			@log.error e.message
-		end
-	
+      @log.error "Error receiving data"
+      @log.error e.message
+    end
+  
     # EM callback
     def post_init
       @log.info "PeerConnectionHandler::post_init" 
