@@ -6,6 +6,7 @@ git_source(:github) do |repo_name|
   "https://github.com/#{repo_name}.git"
 end
 
+gem 'activesupport'
 gem 'daemons'
 gem 'pg'
 gem 'json-schema'
@@ -22,4 +23,5 @@ group :development, :test do
   gem 'simplecov'
   gem 'vcr'
   gem 'factory_girl'
+  gem 'guard-rspec', require: false
 end
