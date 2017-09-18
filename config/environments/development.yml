@@ -1,9 +1,11 @@
 network: :litecoin
-listen: ["0.0.0.0", 9333]
+listen: ["127.0.0.1", 9333]
+external_ip: "213.127.67.114"
 connect_peers: []
 peer_addresses_path: "data/peer_addresses.yml"
-max_outgoing_peers: 32
+max_outgoing_peers: 8
 max_incoming_peers: 32
 log_path: "log/development.log"
 poll_limit: 10000
 epoll_user: ~
+connection_timeout: 10000

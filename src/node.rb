@@ -11,7 +11,6 @@ module RuLite
     attr_reader :log
     attr_reader :peer_connections
     attr_reader :peer_address_store
-    attr_reader :last_block_time
 
     def initialize config
       @config = config
@@ -24,9 +23,17 @@ module RuLite
       @peer_address_store = RuLite::PeerAddressStore.new @config[:peer_addresses_path]
     end
 
+    def external_ip
+      @config[:external_ip] || @config[:listen][0]
+    end
+
+    def external_port
+      @config[:listen][1]
+    end
+
     def start
       @start_time = Time.now
-      log.info "RuLite::Node starting"
+      log.info "RuLite::Node starting on #{Bitcoin.network[:project]} network"
 
       EM.add_shutdown_hook do
         peer_address_store.save!
@@ -50,7 +57,6 @@ module RuLite
 
       EM.run do
         log.info "Trying to bind server socket to #{listen_address}:#{listen_port}"
-
         handler_params = {
           context: self,
           host: listen_address,
@@ -59,8 +65,12 @@ module RuLite
         }
         EM.start_server(listen_address, listen_port, PeerConnectionHandler, handler_params)
         log.info "Listening on #{listen_address}:#{listen_port}"
-     
-        connect_dns_seeds unless Bitcoin.network[:dns_seeds].empty?
+    
+        if Bitcoin.network[:dns_seeds].empty?
+          connect_known_peers
+        else
+          connect_dns_seeds
+        end
         connect_config_peers unless config[:connect_peers].empty?
         connect_peers unless peer_address_store.empty?
       end
@@ -133,6 +143,10 @@ module RuLite
     
     def desired_connections
       config[:max_outgoing_peers] - @peer_connections.select(&:outgoing?).size
+    end
+
+    def accept_incoming_peers?
+      config[:max_incoming_peers] > @peer_connections.select(&:incoming?).size
     end
 
     def uptime
