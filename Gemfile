@@ -14,7 +14,7 @@ gem 'require_all'
 gem 'rest-client'
 gem 'rack'
 gem 'log4r'
-gem 'bitcoin-ruby'
+gem 'bitcoin-ruby', git: 'git@github.com:/evaniainbrooks/bitcoin-ruby'
 gem 'eventmachine'
 
 group :development, :test do
