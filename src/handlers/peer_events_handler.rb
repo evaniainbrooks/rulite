@@ -48,16 +48,16 @@ module RuLite
     end
 
     def on_version version
-			@log.debug "#{peer} Received version #{version.inspect} message"
+      @log.debug "#{peer} Received version #{version.inspect} message"
      
       @state = :connected
       @connection.latency = 0
-			@connection.send_data(Bitcoin::Protocol.verack_pkt)
+      @connection.send_data(Bitcoin::Protocol.verack_pkt)
     end
 
-		def on_verack
-			@log.debug "#{peer} Received verack message"
-		end
+    def on_verack
+      @log.debug "#{peer} Received verack message"
+    end
 
     def on_reject reject
       @log.warn "#{peer} Received reject message #{reject.inspect}"
